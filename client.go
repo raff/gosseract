@@ -62,6 +62,12 @@ type Client struct {
 	// See http://www.sk-spell.sk.cx/tesseract-ocr-parameters-in-302-version
 	// TODO: Fix link to official page
 	ConfigFilePath string
+
+	// OEM specifies the OCR Engine Mode
+	OEM OcrEngineMode
+
+        // PSM specifies the Page Segmentation Mode
+        PSM PageSegMode
 }
 
 // NewClient construct new Client. It's due to caller to Close this client.
@@ -70,6 +76,7 @@ func NewClient() *Client {
 		api:       C.Create(),
 		Variables: map[SettableVariable]string{},
 		Trim:      true,
+		OEM:       OEM_DEFAULT,
 	}
 	return client
 }
@@ -147,6 +154,13 @@ func (client *Client) SetLanguage(langs ...string) error {
 	return nil
 }
 
+// SetOcrEngineMode set the Engine Mode to use. OEM_DEFAULT is the default.
+func (client *Client) SetOcrEngineMode(oem OcrEngineMode) error {
+	client.OEM = oem
+	return nil
+}
+
+// DisableOutput discard the debugging output produceded by the OCR process
 func (client *Client) DisableOutput() error {
 	return client.SetVariable(DEBUG_FILE, os.DevNull)
 }
@@ -176,7 +190,8 @@ func (client *Client) SetVariable(key SettableVariable, value string) error {
 // See official documentation for PSM here https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality#page-segmentation-method
 // See https://github.com/otiai10/gosseract/issues/52 for more information.
 func (client *Client) SetPageSegMode(mode PageSegMode) error {
-	C.SetPageSegMode(client.api, C.int(mode))
+        client.PSM = mode
+	//C.SetPageSegMode(client.api, C.int(mode))
 	return nil
 }
 
@@ -209,7 +224,7 @@ func (client *Client) init() error {
 	}
 	defer C.free(unsafe.Pointer(configfile))
 
-	res := C.Init(client.api, nil, languages, configfile)
+	res := C.Init(client.api, nil, languages, configfile, C.int(client.OEM))
 	if res != 0 {
 		// TODO: capture and vacuum stderr from Cgo
 		return fmt.Errorf("failed to initialize TessBaseAPI with code %d", res)
@@ -218,6 +233,10 @@ func (client *Client) init() error {
 	if err := client.setVariablesToInitializedAPI(); err != nil {
 		return err
 	}
+
+        //if C.GetPageSegMode(client.api) == C.int(PSM_SINGLE_BLOCK) {
+                C.SetPageSegMode(client.api, C.int(client.PSM))
+        //}
 
 	if client.pixImage == nil {
 		return fmt.Errorf("PixImage is not set, use SetImage or SetImageFromBytes before Text or HOCRText")

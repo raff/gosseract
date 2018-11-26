@@ -39,6 +39,31 @@ const (
 	PSM_COUNT
 )
 
+// OcrEngineMode represents tesseract::OcrEngineMode.
+
+type OcrEngineMode int
+
+const (
+	// OEM_TESSERACT_ONLY - Run Tesseract only - fastest; deprecated
+	OEM_TESSERACT_ONLY OcrEngineMode = iota
+	// OEM_LSTM_ONLY - Run just the LSTM line recognizer.
+	OEM_LSTM_ONLY
+	// OEM_TESSERACT_LSTM_COMBINED - Run the LSTM recognizer, but allow fallback
+	// to Tesseract when things get difficult.
+	// deprecated
+	OEM_TESSERACT_LSTM_COMBINED
+	// OEM_DEFAULT - Specify this mode when calling init_*(),
+	// to indicate that any of the above modes
+	// should be automatically inferred from the
+	// variables in the language-specific config,
+	// command-line configs, or if not specified
+	// in any of the above should be set to the
+	// default OEM_TESSERACT_ONLY.
+	OEM_DEFAULT
+	// OEM_COUNT - Number of OEMs. This is NOT a member of OEM
+	OEM_COUNT
+)
+
 // PageIteratorLevel maps directly to tesseracts enum tesseract::PageIteratorLevel
 // represents the hierarchy of the page elements used in ResultIterator.
 // https://github.com/tesseract-ocr/tesseract/blob/a18620cfea33d03032b71fe1b9fc424777e34252/ccstruct/publictypes.h#L219-L225

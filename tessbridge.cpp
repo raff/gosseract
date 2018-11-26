@@ -29,19 +29,19 @@ void ClearPersistentCache(TessBaseAPI a) {
   api->ClearPersistentCache();
 }
 
-int Init(TessBaseAPI a, char* tessdataprefix, char* languages) {
+int Init(TessBaseAPI a, char* tessdataprefix, char* languages, int oem) {
   tesseract::TessBaseAPI * api = (tesseract::TessBaseAPI*)a;
-  return api->Init(tessdataprefix, languages);
+  return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem);
 }
 
-int Init(TessBaseAPI a, char* tessdataprefix, char* languages, char* configfilepath) {
+int Init(TessBaseAPI a, char* tessdataprefix, char* languages, char* configfilepath, int oem) {
   tesseract::TessBaseAPI * api = (tesseract::TessBaseAPI*)a;
   if (configfilepath != NULL) {
     char *configs[]={configfilepath};
     int configs_size = 1;
-    return api->Init(tessdataprefix, languages, tesseract::OEM_DEFAULT, configs, configs_size, NULL, NULL, false);
+    return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem,  configs, configs_size, NULL, NULL, false);
   } else {
-    return api->Init(tessdataprefix, languages);
+    return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem);
   }
 }
 

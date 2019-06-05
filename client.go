@@ -62,6 +62,15 @@ type Client struct {
 	// See http://www.sk-spell.sk.cx/tesseract-ocr-parameters-in-302-version
 	// TODO: Fix link to official page
 	ConfigFilePath string
+
+	// OEM specifies the OCR Engine Mode
+	OEM OcrEngineMode
+
+	// PSM specifies the Page Segmentation Mode
+	PSM PageSegMode
+
+	// PPI specify the image resolution
+	PPI int
 }
 
 // NewClient construct new Client. It's due to caller to Close this client.
@@ -70,6 +79,7 @@ func NewClient() *Client {
 		api:       C.Create(),
 		Variables: map[SettableVariable]string{},
 		Trim:      true,
+		OEM:       OEM_DEFAULT,
 	}
 	return client
 }
@@ -147,6 +157,13 @@ func (client *Client) SetLanguage(langs ...string) error {
 	return nil
 }
 
+// SetOcrEngineMode set the Engine Mode to use. OEM_DEFAULT is the default.
+func (client *Client) SetOcrEngineMode(oem OcrEngineMode) error {
+	client.OEM = oem
+	return nil
+}
+
+// DisableOutput discard the debugging output produceded by the OCR process
 func (client *Client) DisableOutput() error {
 	return client.SetVariable(DEBUG_FILE, os.DevNull)
 }
@@ -172,11 +189,17 @@ func (client *Client) SetVariable(key SettableVariable, value string) error {
 	return nil
 }
 
+// SetSourceResolutions sets the image resolution (PPI)
+func (client *Client) SetSourceResolution(res int) {
+	client.PPI = res
+}
+
 // SetPageSegMode sets "Page Segmentation Mode" (PSM) to detect layout of characters.
 // See official documentation for PSM here https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality#page-segmentation-method
 // See https://github.com/otiai10/gosseract/issues/52 for more information.
 func (client *Client) SetPageSegMode(mode PageSegMode) error {
-	C.SetPageSegMode(client.api, C.int(mode))
+	client.PSM = mode
+	//C.SetPageSegMode(client.api, C.int(mode))
 	return nil
 }
 
@@ -210,7 +233,7 @@ func (client *Client) init() error {
 	defer C.free(unsafe.Pointer(configfile))
 
 	errbuf := [512]C.char{}
-	res := C.Init(client.api, nil, languages, configfile, &errbuf[0])
+	res := C.Init(client.api, nil, languages, configfile, &errbuf[0], C.int(client.OEM))
 	msg := C.GoString(&errbuf[0])
 
 	if res != 0 {
@@ -221,10 +244,18 @@ func (client *Client) init() error {
 		return err
 	}
 
+	//if C.GetPageSegMode(client.api) == C.int(PSM_SINGLE_BLOCK) {
+	C.SetPageSegMode(client.api, C.int(client.PSM))
+	//}
+
 	if client.pixImage == nil {
 		return fmt.Errorf("PixImage is not set, use SetImage or SetImageFromBytes before Text or HOCRText")
 	}
 	C.SetPixImage(client.api, client.pixImage)
+
+	if client.PPI > 0 {
+		C.SetSourceResolution(client.api, C.int(client.PPI))
+	}
 
 	return nil
 }

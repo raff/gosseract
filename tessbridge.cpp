@@ -51,9 +51,9 @@ int Init(TessBaseAPI a, char* tessdataprefix, char* languages, char* configfilep
   if (configfilepath != NULL) {
     char *configs[]={configfilepath};
     int configs_size = 1;
-    ret = api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem,  configs, configs_size, NULL, NULL, false);
+    return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem,  configs, configs_size, NULL, NULL, false);
   } else {
-    ret = api->Init(tessdataprefix, languages);
+    return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem);
   }
 
   // {{{ Restore default stderr

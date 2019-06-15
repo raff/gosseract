@@ -36,15 +36,19 @@ int Init(TessBaseAPI a, char* tessdataprefix, char* languages, int oem) {
   return api->Init(tessdataprefix, languages, (tesseract::OcrEngineMode)oem);
 }
 
+//#define ERRBUF
+
 int Init(TessBaseAPI a, char* tessdataprefix, char* languages, char* configfilepath, char* errbuf, int oem) {
   tesseract::TessBaseAPI * api = (tesseract::TessBaseAPI*)a;
 
   // {{{ Redirect STDERR to given buffer
+#ifdef ERRBUF
   fflush(stderr);
   int original_stderr;
   original_stderr = dup(STDERR_FILENO);
   (void) freopen("/dev/null", "a", stderr);
   setbuf(stderr, errbuf);
+#endif
   // }}}
 
   int ret;
@@ -57,9 +61,11 @@ int Init(TessBaseAPI a, char* tessdataprefix, char* languages, char* configfilep
   }
 
   // {{{ Restore default stderr
+#ifdef ERRBUF
   (void) freopen("/dev/null", "a", stderr);
   dup2(original_stderr, STDERR_FILENO);
   setbuf(stderr, NULL);
+#endif
   // }}}
 
   return ret;
